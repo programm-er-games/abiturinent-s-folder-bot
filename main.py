@@ -5,6 +5,8 @@ start_id: int = 0
 queue_id: list = []
 
 
+@bot.message_handler(commands=['about', 'admin'])
+@bot.message_handler(content_types=["text"])
 def queue_manager(message):
     """
         Итак, функция queue_manager управляет очередью из пользователей

@@ -57,7 +57,6 @@ is_debug: False
 """
 
 
-@bot.message_handler(content_types=['text'])
 def manager(message):
     if current_stage == "None":
         start(message)
@@ -83,7 +82,7 @@ def start(message):
            "поступить сюда.\n\n<здесь будет ещё текст, я уверен, я просто ничего больше ничего не " \
            "придумал толкового>\n\nВаши данные будут переданы нужным людям. Вы согласны предоставить " \
            "Ваши персональные данные для поступления?"
-    markup_choice = types.ReplyKeyboardMarkup()
+    markup_choice = types.ReplyKeyboardMarkup(resize_keyboard=True)
     yes = types.KeyboardButton("Да")
     no = types.KeyboardButton("Нет")
     markup_choice.add(yes, no)
@@ -122,9 +121,10 @@ def agree(message):
         if abit_patronymic == "":
             abit_patronymic = None
 
-        text = f"Замечательно! Теперь мы знаем, как к тебе обращаться!\n{abit_name}... Какое красивое имя! Из какого" \
-               f"города ты приехал(а)?"
+        text = f"Замечательно! Теперь мы знаем, как к тебе обращаться!\n{abit_name}... Какое красивое имя! " \
+               "Из какого города ты приехал(а)?"
         bot.send_message(message.chat.id, text, reply_markup=markup_remove)
+        current_stage = "Город"
     elif current_stage == "Город":
         abit_city = message.text
 
