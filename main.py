@@ -1,11 +1,26 @@
 from AF import manager, bot
+
 # переменная, которая будет хранить в себе id пользователя, который начал работу с ботом
 start_id: int = 0
 # переменная, которая будет хранить в себе id пользователей, которые будут начинать работу с ботом
 queue_id: list = []
+# переменная для обозначения окончания работы пользователя с ботом
 
 
 @bot.message_handler(content_types=['text'])
+def main(message):
+    # Здесь мы сразу проверяем, тот ли пользователь нам пишет.
+    # Если да, то запускаем распределяющую функцию, иначе отправляем сообщение о том,
+    # что этот пользователь пока не может пользоваться ботом
+    queue_manager(message) if message.from_user.id == start_id or start_id == 0 \
+        else bot.send_message(message.from_user.id,
+                              "<b>Вы не можете использовать данную команду.</b>\n"
+                              "Более того, <b>Вы не можете начать работу с данным ботом."
+                              "</b>\nВы находитесь в очереди. Мы пришлём Вам сообщение, "
+                              "как только другой пользователь закончит работу с ним",
+                              parse_mode="html")
+
+
 def queue_manager(message):
     """
         Итак, функция queue_manager управляет очередью из пользователей
@@ -40,6 +55,7 @@ def queue_manager(message):
 
 if __name__ == "__main__":
     from datetime import datetime
+
     # используем точное время запуска бота для отладки
     print(str(datetime.now().day) + "." + str(datetime.now().month) + "." +
           str(datetime.now().year) + " " + str(datetime.now().hour) + ":" +

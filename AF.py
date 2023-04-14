@@ -60,16 +60,18 @@ is_debug: False
 def manager(message):
     if current_stage == "None":
         start(message)
-    elif current_stage in ["Старт", "Инициалы", "Город", "Контактные данные: опрос", "Контактные: ввод"]:
+    elif current_stage in ["Старт", "Инициалы", "Город", "Школа, класс",
+                           "Контактные данные: опрос", "Контактные данные: ввод"]:
         agree(message)
     else:
         bot.send_message(message.chat.id, "<b>Извините, возникли неполадки в программе. "
                                           "Выполняю принудительное завершение работы...</b>", parse_mode='html')
         bot.stop_bot()
         raise SystemError("Сбой в программе! Неправильное название этапа!")
+    if message.text == "/about":
+        about(message)
 
 
-@bot.message_handler(commands=['about'])
 def about(message):
     global markup_remove
     about_func(message, markup_remove)
@@ -92,7 +94,7 @@ def start(message):
 
 def agree(message):
     global current_stage, markup_remove, abit_surname, abit_patronymic, \
-        abit_name, abit_city, abit_school, abit_class,  is_phone_defined, \
+        abit_name, abit_city, abit_school, abit_class, is_phone_defined, \
         is_email_defined, is_address_defined, abit_phone, abit_email, abit_address
     if current_stage == "Старт":
         text = "Тогда погнали! Для начала скажите, как Вас зовут по фамилии, имени и отчеству?"
@@ -138,9 +140,11 @@ def agree(message):
         is_school = False
         is_class = False
         for i in _abit_school:
-            if i != "," or (i != " " and not is_school and is_class):
+            if i != ",":
                 temp_string += i
-            else:
+            elif i == "," or _abit_school.index(i) == _abit_school.__len__():
+                if _abit_school.index(i) == _abit_school.__len__() - 1:
+                    temp_string += i
                 if not is_school:
                     abit_school = temp_string
                     is_school = True
@@ -153,8 +157,8 @@ def agree(message):
                "Я подвожу к тому, что нам нужны твои контактные данные. Но т.к. мы не можем знать, какие " \
                "данные ты нам готов(а) предоставить, я предоставляю <b>тебе</b> право выбора.\n" \
                "В меню кнопок будут представлены доступные варианты, так что выбирай, что тебе будет комфортнее.\n\n" \
-               "<пока у нас нет определённого списка данных, которые мы должны собирать, поэтому пока так, " \
-               "плавающий выбор данных...>"
+               "(пока у нас нет определённого списка данных, которые мы должны собирать, поэтому пока так, " \
+               "плавающий выбор данных...)"
         # TODO: здесь надо решить какой вид клавиатуры нам нужно настроить: reply или inline клавиатура
         markup_choice = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
         phone = types.KeyboardButton("Телефон")
@@ -199,18 +203,25 @@ def agree(message):
         bot.send_message(message.chat.id, text)
         current_stage = "Контактные данные: ввод"
     elif current_stage == "Контактные данные: ввод":
-        _abit_data = message.text
+        _abit_data: str = message.text
         temp_string = ""
         for i in _abit_data:
-            if i != "," and is_address_defined:
-                temp_string += i
+            if (is_phone_defined and is_email_defined) or \
+                    (is_address_defined and is_email_defined) or \
+                    (is_phone_defined and is_address_defined) or \
+                    (is_phone_defined and is_address_defined and is_email_defined):
+                if i != ",":
+                    temp_string += i
             else:
-                if is_phone_defined:
-                    abit_phone = check_phone_format(temp_string)
-                elif is_email_defined:
-                    abit_email = check_email_format(temp_string)
-                elif is_address_defined:
-                    abit_address = check_address_format(temp_string)
+                if _abit_data.index(i) == _abit_data.__len__():
+                    if is_phone_defined:
+                        abit_phone = check_phone_format(temp_string)
+                    elif is_email_defined:
+                        abit_email = check_email_format(temp_string)
+                    elif is_address_defined:
+                        abit_address = check_address_format(temp_string)
+                else:
+                    temp_string += i
         if abit_phone == "error" or abit_email == "error" or abit_address == "error":
             error_text = "Где-то ты совершил(а) ошибку! Перепиши, пожалуйста, " \
                          "ещё раз своё сообщение с исправленными данными"
