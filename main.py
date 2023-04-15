@@ -5,6 +5,7 @@ start_id: int = 0
 # переменная, которая будет хранить в себе id пользователей, которые будут начинать работу с ботом
 queue_id: list = []
 # переменная для обозначения окончания работы пользователя с ботом
+is_finished: bool = False
 
 
 @bot.message_handler(content_types=['text'])
@@ -40,7 +41,7 @@ def queue_manager(message):
         Данная функция нужна, чтобы избегать проблем в логике программы из-за фундаментальной синхронности,
         т.к. сообщения будут как радиоволны, накладываться друг на друга и создавать помехи в работе программы бота.
     """
-    global start_id, queue_id
+    global start_id, queue_id, is_finished
     for i in queue_id:
         print(str(queue_id.index(i, 0, int(queue_id.__sizeof__() / 4))) + ", " + str(i) + "; ")
     # если никто ещё не запускал бота, то заполняем переменную id пользователя, который первый начал работу с ботом
@@ -48,9 +49,13 @@ def queue_manager(message):
         start_id = message.from_user.id
     # если сообщение пришло от того пользователя, который работает с ботом, то работаем с этим сообщением
     if message.from_user.id == start_id:
-        manager(message)
+        is_finished = manager(message)
     else:
-        queue_id.append(message.from_user.id) if start_id != message.from_user.id else 0
+        if start_id != message.from_user.id:
+            queue_id.append(message.from_user.id)
+    if is_finished:
+        bot.send_message(queue_id[0], "Теперь <b>Вы</b> можете начать работу с ботом!", parse_mode='html')
+        start_id = queue_id[0]
 
 
 if __name__ == "__main__":

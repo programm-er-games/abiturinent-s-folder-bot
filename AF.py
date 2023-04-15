@@ -23,6 +23,7 @@ is_phone_defined = False
 is_address_defined = False
 is_email_defined = False
 is_debug: False
+is_finished = False
 
 # TODO: сделать распределяющую функцию; не забыть, что на этапе "Старт" есть выбор "Да" или "Нет",
 #  что необходимо учесть при выборе вариантов развития событий
@@ -70,11 +71,47 @@ def manager(message):
         raise SystemError("Сбой в программе! Неправильное название этапа!")
     if message.text == "/about":
         about(message)
+    elif message.text == "/admin" or current_stage.endswith(("(debug_mode: stage 1)",
+                                                            "(debug_mode: stage 2)",
+                                                             "(debug_mode: stage 3)")):
+        admin(message)
+    return is_finished
 
 
 def about(message):
     global markup_remove
-    about_func(message, markup_remove)
+    about_func(message, bot, markup_remove)
+
+
+
+def admin(message):
+    global current_stage
+    if not is_debug:
+        bot.send_message(message.chat.id, "Ты разработчик? Докажи!")
+        current_stage += "(debug_mode: stage 1)"
+        if current_stage.endswith("(debug_mode: stage 1)"):
+            text = "<b>Первый вопрос:</b> как называется этот проект?"
+            bot.send_message(message.chat.id, text, parse_mode='html')
+
+            current_stage -= "1)"
+            current_stage += "2)"
+        elif current_stage.endswith("(debug_mode: stage 2)"):
+            text = ""
+            if message.text == "Abiturient's folder":
+                text = "Хорошо, <b>второй вопрос</b>: "
+            elif message.text == "Сбор данных об абитуриентах":
+                text = ""
+
+
+def reset_values():
+    global current_stage, abit_surname, abit_patronymic, \
+        abit_name, abit_city, abit_school, abit_class, is_phone_defined, \
+        is_email_defined, is_address_defined, abit_phone, abit_email, abit_address
+    current_stage = "None"
+    abit_surname, abit_patronymic, abit_name, abit_city, abit_school, abit_class, abit_email, abit_address = \
+        "", "", "", "", "", "", "", ""
+    is_phone_defined, is_email_defined, is_address_defined = False
+    abit_phone = 0
 
 
 def start(message):
@@ -95,7 +132,8 @@ def start(message):
 def agree(message):
     global current_stage, markup_remove, abit_surname, abit_patronymic, \
         abit_name, abit_city, abit_school, abit_class, is_phone_defined, \
-        is_email_defined, is_address_defined, abit_phone, abit_email, abit_address
+        is_email_defined, is_address_defined, abit_phone, abit_email, \
+        abit_address, is_finished
     if current_stage == "Старт":
         text = "Тогда погнали! Для начала скажите, как Вас зовут по фамилии, имени и отчеству?"
         bot.send_message(message.chat.id, text, reply_markup=markup_remove)
@@ -232,3 +270,4 @@ def agree(message):
                    "@FeedbackAboutBots_bot или @QuizBot_Developer"
             bot.send_message(message.chat.id, text)
             current_stage = "None"
+            is_finished = True
