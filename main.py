@@ -1,4 +1,4 @@
-from AF import manager, bot
+from AF import manager, bot, finish_session
 
 # переменная, которая будет хранить в себе id пользователя, который начал работу с ботом
 start_id: int = 0
@@ -15,8 +15,8 @@ def main(message):
     # что этот пользователь пока не может пользоваться ботом
     queue_manager(message) if message.from_user.id == start_id or start_id == 0 \
         else bot.send_message(message.from_user.id,
-                              "<b>Вы не можете использовать данную команду.</b>\n"
-                              "Более того, <b>Вы не можете начать работу с данным ботом."
+                              "<b>Вы не можете сейчас использовать данную команду.</b>\n"
+                              "Более того, <b>Вы не можете сейчас начать работу с данным ботом."
                               "</b>\nВы находитесь в очереди. Мы пришлём Вам сообщение, "
                               "как только другой пользователь закончит работу с ним",
                               parse_mode="html")
@@ -54,6 +54,7 @@ def queue_manager(message):
         if start_id != message.from_user.id:
             queue_id.append(message.from_user.id)
     if is_finished:
+        finish_session(message)
         bot.send_message(queue_id[0], "Теперь <b>Вы</b> можете начать работу с ботом!", parse_mode='html')
         start_id = queue_id[0]
 
