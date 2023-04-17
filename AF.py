@@ -29,10 +29,10 @@
                 7. В блоке условия из шага 6 мы пишем логику из шага 3.
     Как видите, ничего сложного нет! Надо только понимать логику прохождения программы по этапам.
 """
-import sqlite3
 
 import telebot
 from telebot import types
+
 from config import abit_sfedu_bot
 from check_formats_AF import check_phone_format, check_email_format, check_address_format
 from about_func_AF import about_func
@@ -41,6 +41,13 @@ from sql_AF import get_info_from_abiturient, get_info_about_message, clear_table
 bot = telebot.TeleBot(abit_sfedu_bot)
 markup_remove = types.ReplyKeyboardRemove()
 current_stage = "None"
+debug_stage = 0
+is_force_exit = False
+is_phone_defined = False
+is_address_defined = False
+is_email_defined = False
+is_debug = False
+is_finished = False
 abit_data: dict = {
     "name": "",
     "surname": "",
@@ -52,11 +59,6 @@ abit_data: dict = {
     "class": "",
     "city": ""
 }
-is_phone_defined = False
-is_address_defined = False
-is_email_defined = False
-is_debug = False
-is_finished = False
 variables_list = {
     "p_d": types.KeyboardButton("is_phone_defined"),  # , callback_data="p_d"
     "e_d": types.KeyboardButton("is_email_defined"),  # , callback_data="e_d"
@@ -64,12 +66,11 @@ variables_list = {
     "message_list": ...,
     "markup_choice": types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 }
-debug_stage = 0
-is_force_exit = False
-
-
-# TODO: сделать распределяющую функцию; не забыть, что на этапе "Старт" есть выбор "Да" или "Нет",
-#  что необходимо учесть при выборе вариантов развития событий
+messages_dict = {
+    "messages": [],
+    "counter": 0
+}
+is_admin_choice = False
 
 
 def manager(message):
@@ -102,7 +103,7 @@ def about(message):
 
 
 def admin(message):
-    global debug_stage, is_debug, is_phone_defined, is_email_defined, is_address_defined
+    global debug_stage, is_debug, is_phone_defined, is_email_defined, is_address_defined, is_admin_choice
     if not is_debug:
         if debug_stage == 0:
             bot.send_message(message.chat.id, "Ты разработчик? Докажи!")
@@ -177,6 +178,7 @@ def admin(message):
                     bot.send_message(message.chat.id, text, reply_markup=markup_remove)
     else:
         if message.text.startswith("/del"):
+            import sqlite3
             try:
                 if message.text.endswith("st"):
                     clear_table("students")
@@ -196,11 +198,12 @@ def admin(message):
                 is_email_defined = True if not is_email_defined else False
             elif message.text == "is_address_defined":
                 is_address_defined = True if not is_address_defined else False
-            bot.send_message(message.chat.id, "Эти переменные можно изменить:\n\n"
+            bot.send_message(message.chat.id, "Эти переменные можно изменить:\n"
                                               f"     is_phone_defined: {is_phone_defined}\n"
                                               f"     is_email_defined: {is_email_defined}\n"
                                               f"     is_address_defined: {is_address_defined}\n",
                              reply_markup=variables_list["markup_choice"])
+            is_admin_choice = True
 
 
 def non_admin(message):
@@ -275,6 +278,72 @@ def start(message):
 def agree(message):
     global current_stage, markup_remove, is_phone_defined, is_email_defined, \
         is_address_defined, is_finished, abit_data, is_force_exit
+
+    def set_text(check_text: str):
+        global is_phone_defined, is_email_defined, is_address_defined
+        if not is_admin_choice:
+            text = ""
+            if check_text == "Телефон":
+                text = "Тогда напиши, пожалуйста, свой рабочий номер телефона, чтобы мы всегда могли тебе позвонить " \
+                       "и спросить, как у тебя дела :)"
+                is_phone_defined = True
+            elif check_text == "Email":
+                text = "Тогда напиши, пожалуйста, свой рабочий email, чтобы мы всегда могли написать тебе " \
+                       "и спросить, как дела с долгами :)"
+                is_email_defined = True
+            elif check_text == "Адрес проживания":
+                text = "Тогда напиши, пожалуйста, свой адрес, где ты прямо сейчас прописан(а), чтобы мы " \
+                       "могли найти тебя и к тебе в случае чего придёт военком :)"
+                is_address_defined = True
+            elif check_text == "И телефон, и email":
+                text = "Тогда напиши, пожалуйста, телефон и email отдельными сообщениями, " \
+                       "чтобы бот смог различить данные"
+                is_phone_defined, is_email_defined = True
+            elif check_text == "И адрес, и email":
+                text = "Тогда напиши, пожалуйста, адрес проживания и email отдельными сообщениями, " \
+                       "чтобы бот смог различить данные"
+                is_address_defined, is_email_defined = True
+            elif check_text == "И телефон, и адрес":
+                text = "Тогда напиши, пожалуйста, телефон и адрес проживания отдельными сообщениями, " \
+                       "чтобы бот смог различить данные"
+                is_phone_defined, is_address_defined = True
+            elif check_text == "Всё сразу":
+                text = "Ого! Ты решил(а) всё сразу нам сказать? Какой(ая) ты молодец!\nВ таком случае напиши, " \
+                       "пожалуйста, телефон, email и адрес проживания отдельными сообщениями, " \
+                       "чтобы бот смог различить данные"
+                is_phone_defined, is_email_defined, is_address_defined = True
+            return text
+        else:
+            # TODO: переписать название функции и записать максимум действий в одну функцию
+            ...
+
+    def fill_fields():
+        global messages_dict
+        number_of_messages = 0
+        if (is_phone_defined and not is_email_defined and not is_address_defined) or \
+                (not is_phone_defined and is_email_defined and not is_address_defined) or \
+                (not is_phone_defined and not is_email_defined and is_address_defined):
+            number_of_messages = 1
+        elif (is_phone_defined and is_email_defined) or \
+                (is_address_defined and is_email_defined) or \
+                (is_phone_defined and is_address_defined):
+            number_of_messages = 2
+        elif is_phone_defined and is_email_defined and is_address_defined:
+            number_of_messages = 3
+        messages_dict["messages"].append(message.text)
+        messages_dict["counter"] += 1
+        if messages_dict["counter"] == number_of_messages:
+            for field in messages_dict["messages"]:
+                if is_phone_defined:
+                    abit_data["phone"] = check_phone_format(field)
+                elif is_email_defined:
+                    abit_data["email"] = check_email_format(field)
+                elif is_address_defined:
+                    abit_data["address"] = check_address_format(field)
+            abit_data["phone"] = "" if abit_data["phone"] == "error" else abit_data["phone"]
+            abit_data["email"] = "" if abit_data["email"] == "error" else abit_data["email"]
+            abit_data["address"] = "" if abit_data["address"] == "error" else abit_data["address"]
+
     if current_stage == "Старт":
         if message.text == "Да":
             text = "Тогда погнали! Для начала скажите, как Вас зовут по фамилии, имени и отчеству?"
@@ -327,75 +396,39 @@ def agree(message):
     elif current_stage == "Класс":
         abit_data["class"] = message.text
 
-        text = f"Хорошо, {abit_data['name']}! Теперь нам нужно знать, как мы можем с тобой связаться " \
-               "помимо телеграм-бота. Я подвожу к тому, что нам нужны твои контактные данные. " \
-               "Но т.к. мы не можем знать, какие данные ты нам готов(а) предоставить, " \
-               "я предоставляю <b>тебе</b> право выбора.\nВ меню кнопок будут представлены доступные варианты, " \
-               "так что выбирай, что тебе будет комфортнее.\n\n" \
-               "(пока у нас нет определённого списка данных, которые мы должны собирать, поэтому пока так, " \
-               "плавающий выбор данных...)"
-        markup_choice = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-        phone = types.KeyboardButton("Телефон")
-        email = types.KeyboardButton("Email")
-        address = types.KeyboardButton("Адрес проживания")
-        phone_email = types.KeyboardButton("И телефон, и email")
-        address_email = types.KeyboardButton("И адрес, и email")
-        phone_address = types.KeyboardButton("И телефон, и адрес")
-        all_data = types.KeyboardButton("Всё сразу")
-        markup_choice.add(phone, email, address, phone_email, address_email, phone_address, all_data)
-        bot.send_message(message.chat.id, text, parse_mode="html", reply_markup=markup_choice)
-        current_stage = "Контактные данные: опрос"
+        if not is_admin_choice:
+            text = f"Хорошо, {abit_data['name']}! Теперь нам нужно знать, как мы можем с тобой связаться " \
+                   "помимо телеграм-бота. Я подвожу к тому, что нам нужны твои контактные данные. " \
+                   "Но т.к. мы не можем знать, какие данные ты нам готов(а) предоставить, " \
+                   "я предоставляю <b>тебе</b> право выбора.\nВ меню кнопок будут представлены доступные варианты, " \
+                   "так что выбирай, что тебе будет комфортнее.\n\n" \
+                   "(пока у нас нет определённого списка данных, которые мы должны собирать, поэтому пока так, " \
+                   "плавающий выбор данных...)"
+            markup_choice = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+            phone = types.KeyboardButton("Телефон")
+            email = types.KeyboardButton("Email")
+            address = types.KeyboardButton("Адрес проживания")
+            phone_email = types.KeyboardButton("И телефон, и email")
+            address_email = types.KeyboardButton("И адрес, и email")
+            phone_address = types.KeyboardButton("И телефон, и адрес")
+            all_data = types.KeyboardButton("Всё сразу")
+            markup_choice.add(phone, email, address, phone_email, address_email, phone_address, all_data)
+            bot.send_message(message.chat.id, text, parse_mode="html", reply_markup=markup_choice)
+            current_stage = "Контактные данные: опрос"
+        else:
+            text = set_text(message.text)
+            bot.send_message(message.chat.id, text)
+            fill_fields()
+            current_stage = "Контактные данные: ввод"
     elif current_stage == "Контактные данные: опрос":
         # TODO: разобраться, как мы будем брать данные: одним залпом (одним сообщением, потом вычленять) или
         #  несколькими (несколькими сообщениями, потом поочерёдно присваивать значения)
-        text = ""
-        if message.text == "Телефон":
-            text = "Тогда напиши, пожалуйста, свой рабочий номер телефона, чтобы мы всегда могли тебе позвонить " \
-                   "и спросить, как у тебя дела :)"
-            is_phone_defined = True
-        elif message.text == "Email":
-            text = "Тогда напиши, пожалуйста, свой рабочий email, чтобы мы всегда могли написать тебе " \
-                   "и спросить, как дела с долгами :)"
-            is_email_defined = True
-        elif message.text == "Адрес проживания":
-            text = "Тогда напиши, пожалуйста, свой адрес, где ты прямо сейчас прописан(а), чтобы мы могли найти тебя " \
-                   "и к тебе в случае чего придёт военком :)"
-            is_address_defined = True
-        elif message.text == "И телефон, и email":
-            text = "Тогда напиши, пожалуйста, телефон и email через запятую, чтобы бот смог различить данные"
-            is_phone_defined, is_email_defined = True
-        elif message.text == "И адрес, и email":
-            text = "Тогда напиши, пожалуйста, адрес проживания и email через запятую, чтобы бот смог различить данные"
-            is_address_defined, is_email_defined = True
-        elif message.text == "И телефон, и адрес":
-            text = "Тогда напиши, пожалуйста, телефон и адрес проживания через запятую, чтобы бот смог различить данные"
-            is_phone_defined, is_address_defined = True
-        elif message.text == "Всё сразу":
-            text = "Ого! Ты решил(а) всё сразу нам сказать? Какой(ая) ты молодец!\nВ таком случае напиши, " \
-                   "пожалуйста, телефон, email и адрес проживания через запятую, чтобы бот смог различить данные"
-            is_phone_defined, is_email_defined, is_address_defined = True
-        bot.send_message(message.chat.id, text)
+        if not is_admin_choice:
+            text = set_text(message.text)
+            bot.send_message(message.chat.id, text)
         current_stage = "Контактные данные: ввод"
     elif current_stage == "Контактные данные: ввод":
-        _abit_data: str = message.text
-        temp_string = ""
-        for i in _abit_data:
-            if (is_phone_defined and is_email_defined) or \
-                    (is_address_defined and is_email_defined) or \
-                    (is_phone_defined and is_address_defined) or \
-                    (is_phone_defined and is_address_defined and is_email_defined):
-                if i != ",":
-                    temp_string += i
-            else:
-                if _abit_data.index(i) == _abit_data.__len__():
-                    if is_phone_defined:
-                        abit_data["phone"] = check_phone_format(temp_string)
-                    elif is_email_defined:
-                        abit_data["email"] = check_email_format(temp_string)
-                    elif is_address_defined:
-                        abit_data["address"] = check_address_format(temp_string)
-                else:
-                    temp_string += i
+        fill_fields()
         if abit_data["phone"] == "error" or abit_data["email"] == "error" or abit_data["address"] == "error":
             error_text = "Где-то ты совершил(а) ошибку! Перепиши, пожалуйста, " \
                          "ещё раз своё сообщение с исправленными данными"
