@@ -27,10 +27,10 @@ def clear_table(table: str):
     if table in ["students", "sent_messages"]:
         data = ""
         if table == "students":
-            cur.execute("DROP TABLE students")
+            cur.execute("DELETE FROM students")
             data = cur.fetchall()
         elif table == "sent_messages":
-            cur.execute("DROP TABLE sent_messages")
+            cur.execute("DELETE FROM sent_messages")
             data = cur.fetchall()
         conn.commit()
         return data

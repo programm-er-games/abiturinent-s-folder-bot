@@ -74,15 +74,17 @@ def manager(message):
     get_info_about_message(message.chat.id, message.text)
     if message.text == "/about":
         about(message)
+    elif message.text == "/!admin":
+        non_admin(message)
     elif message.text == "/admin" or debug_stage > 0:
         admin(message)
     elif current_stage == "None":
         start(message)
-    elif current_stage in ["Старт", "Инициалы", "Город", "Школа, класс",
+    elif current_stage in ["Старт", "Инициалы", "Город", "Школа", "Класс",
                            "Контактные данные: опрос", "Контактные данные: ввод"]:
         agree(message)
 
-    elif current_stage not in ["None", "Старт", "Инициалы", "Город", "Школа, класс",
+    elif current_stage not in ["None", "Старт", "Инициалы", "Город", "Школа", "Класс",
                                "Контактные данные: опрос", "Контактные данные: ввод"]:
         bot.send_message(message.chat.id, "<b>Извините, возникли неполадки в программе. "
                                           "Выполняю принудительное завершение работы...</b>", parse_mode='html')
@@ -164,7 +166,7 @@ def admin(message):
                 # variables_list["chat_id"] = message.chat.id
 
     else:
-        if message.text.startwith("/del"):
+        if message.text.startswith("/del"):
             if message.text.endswith("st"):
                 clear_table("students")
             elif message.text.endswith("se"):
@@ -229,6 +231,8 @@ def non_admin(message):
     global debug_stage, is_debug
     debug_stage = 0
     is_debug = False
+    bot.send_message(message.chat.id, "Вы вышли из режима разработчика!")
+    message.text = ""
     manager(message)
 
 
