@@ -1,6 +1,3 @@
-# 13.04.2023 5:00 - я написал почти с нуля логику сценария, кроме SQL-части,
-#  основной программы (без менеджера очередей) с 0:00
-
 """
     Как добавить какой-либо этап в код, не поломав при этом ничего? Всё очень просто!
     Т.к. поэтапная система завязана на переменной current_stage, то мы просто следуем за этими шагами:
@@ -10,24 +7,29 @@
         разные действия под одинаковым предлогом);
         2. Придумайте текст, который Вы собираетесь выводить на этом этапе;
         3. Продумайте логику, которая будет исполняться ПОСЛЕ того, как пользователь отправит "ответ" на Ваш "вопрос";
+        4. Добавьте текст состояния из шага 2 в переменную current_stage_list. Главное, не забудьте, в каком месте
+        в списке Вы его поместили;
         Теперь, когда мы знаем, что именно мы хотим добавить в этап, мы идём дальше, а именно к самому коду:
             Если мы собираемся создавать этап в конце всей программы, то:
-                4. Пишем в конце блока с условием последнего этапа то,
+                5. Пишем в конце блока с условием последнего этапа то,
                 что мы хотим написать пользователю (текст из шага 2);
-                5. Пишем в конце функции условие elif current_stage == "[название из шага 1]": (или конструкцию else,
-                если по логике этапа необходимо исключающее условие, но никак не if, потому что он сломает всю
-                целостность структуры и будет "лететь вперёд паровоза", т.е. собьётся порядок);
-                6. В блоке условия из шага 5 мы пишем логику из шага 3 и переход на нулевой
+                6. Пишем в конце функции условие elif current_stage == "current_stage_list[индекс состояния в списке]":
+                (или конструкцию else, если по логике этапа необходимо исключающее условие,
+                но никак не if, потому что он сломает всю целостность структуры и будет "лететь вперёд паровоза",
+                т.е. собьётся порядок);
+                7. В блоке условия из шага 6 мы пишем логику из шага 3 и переход на нулевой
                 этап (current_stage = "None").
             Если мы собираемся создавать этап между двумя существующими ("один" и "два"), то:
                 (здесь алгоритм чуть сложнее объяснить, но суть алгоритма та же)
-                4. В конце кода этапа "один" мы прописываем то, что мы хотим написать пользователю (текст из шага 2);
-                5. Между этапом "один" и "два" прописываем условие elif current_stage == "[название из шага 1]":
-                (никак не if, потому что он сломает всю целостность структуры и
-                будет "лететь вперёд паровоза", т.е. собьётся порядок);
-                6. В блоке условия из шага 5 мы пишем логику из шага 3.
-        Как видите, ничего сложного нет! Надо только понимать логику прохождения программы по этапам.
+                5. В конце кода этапа "один" мы прописываем то, что мы хотим написать пользователю (текст из шага 2);
+                6. Между этапом "один" и "два" прописываем условие
+                elif current_stage == "current_stage_list[индекс состояния в списке]":
+                (никак не if, потому что он сломает всю целостность структуры и будет "лететь вперёд паровоза",
+                т.е. собьётся порядок);
+                7. В блоке условия из шага 6 мы пишем логику из шага 3.
+    Как видите, ничего сложного нет! Надо только понимать логику прохождения программы по этапам.
 """
+import sqlite3
 
 import telebot
 from telebot import types
@@ -61,9 +63,9 @@ variables_list = {
     "a_d": types.KeyboardButton("is_address_defined"),  # , callback_data="a_d"
     "message_list": ...,
     "markup_choice": types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
-    # "chat_id": 0
 }
 debug_stage = 0
+is_force_exit = False
 
 
 # TODO: сделать распределяющую функцию; не забыть, что на этапе "Старт" есть выбор "Да" или "Нет",
@@ -78,7 +80,7 @@ def manager(message):
         non_admin(message)
     elif message.text == "/admin" or debug_stage > 0:
         admin(message)
-    elif current_stage == "None":
+    elif current_stage == "None" and message.text == "/start":
         start(message)
     elif current_stage in ["Старт", "Инициалы", "Город", "Школа", "Класс",
                            "Контактные данные: опрос", "Контактные данные: ввод"]:
@@ -153,24 +155,40 @@ def admin(message):
 
             bot.send_message(message.chat.id, text, parse_mode='html')
             if is_debug:
-                global is_phone_defined, is_email_defined, is_address_defined
-                variables_list["markup_choice"].add(variables_list["p_d"], variables_list["e_d"], variables_list["a_d"])
-                variables_list["message_list"] = \
-                    bot.send_message(message.chat.id, "Эти переменные можно изменить:\n\n"
-                                                      f"     is_phone_defined: {is_phone_defined}\n"
-                                                      f"     is_email_defined: {is_email_defined}\n"
-                                                      f"     is_address_defined: {is_address_defined}\n"
-                                                      "\nВ меню кнопок выбирай переменную, значение которой хочешь "
-                                                      "поменять на противоположное",
-                                     reply_markup=variables_list["markup_choice"])
-                # variables_list["chat_id"] = message.chat.id
-
+                text = "Можно очистить данные из обоих таблиц командами /delst и /delse (ты знаешь, " \
+                       "за что они отвечают, поэтому будь осторожен). Если что, выйти из режима разработчика " \
+                       "можно командой /!admin"
+                if not current_stage.startswith("Контактные данные"):
+                    global is_phone_defined, is_email_defined, is_address_defined
+                    variables_list["markup_choice"].add(
+                        variables_list["p_d"], variables_list["e_d"], variables_list["a_d"]
+                    )
+                    variables_list["message_list"] = \
+                        bot.send_message(message.chat.id,
+                                         "Эти переменные можно изменить:\n\n"
+                                         f"     is_phone_defined: {is_phone_defined}\n"
+                                         f"     is_email_defined: {is_email_defined}\n"
+                                         f"     is_address_defined: {is_address_defined}\n"
+                                         "\nВ меню кнопок выбирай переменную, значение которой хочешь "
+                                         "поменять на противоположное.\n"
+                                         f"{text}",
+                                         reply_markup=variables_list["markup_choice"])
+                else:
+                    bot.send_message(message.chat.id, text, reply_markup=markup_remove)
     else:
         if message.text.startswith("/del"):
-            if message.text.endswith("st"):
-                clear_table("students")
-            elif message.text.endswith("se"):
-                clear_table("sent_messages")
+            try:
+                if message.text.endswith("st"):
+                    clear_table("students")
+                elif message.text.endswith("se"):
+                    clear_table("sent_messages")
+            except sqlite3.DatabaseError as e:
+                result = "с ошибкой!"
+                print(e)
+            else:
+                result = "успешно!"
+            text = "Очистка данных таблицы проведена <b>" + result + "</b>"
+            bot.send_message(message.chat.id, text, parse_mode='html')
         else:
             if message.text == "is_phone_defined":
                 is_phone_defined = True if not is_phone_defined else False
@@ -181,69 +199,46 @@ def admin(message):
             bot.send_message(message.chat.id, "Эти переменные можно изменить:\n\n"
                                               f"     is_phone_defined: {is_phone_defined}\n"
                                               f"     is_email_defined: {is_email_defined}\n"
-                                              f"     is_address_defined: {is_address_defined}\n"
-                                              "\nВ меню кнопок выбирай переменную, значение которой "
-                                              "хочешь поменять на противоположное",
+                                              f"     is_address_defined: {is_address_defined}\n",
                              reply_markup=variables_list["markup_choice"])
-# @bot.callback_query_handler(func=lambda c: c.data == "p_d")
-# def change_phone_define(callback_query: types.CallbackQuery):
-#     global is_phone_defined
-#     bot.answer_callback_query(callback_query.id)
-#     # далее мы делаем действия, связанные с этой кнопкой по сценарию
-#     if is_debug:
-#         if not is_phone_defined:
-#             is_phone_defined = True
-#         else:
-#             is_phone_defined = False
-#         bot.edit_message_text(chat_id=variables_list["chat_id"], message_id=variables_list["message_list"].id,
-#                               text=variables_list["text_list"], reply_markup=variables_list["markup_choice"])
-#
-#
-# @bot.callback_query_handler(func=lambda c: c.data == "e_d")
-# def change_email_define(callback_query: types.CallbackQuery):
-#     global is_email_defined
-#     bot.answer_callback_query(callback_query.id)
-#     # далее мы делаем действия, связанные с этой кнопкой по сценарию
-#     if is_debug:
-#         if not is_email_defined:
-#             is_email_defined = True
-#         else:
-#             is_email_defined = False
-#         bot.edit_message_text(chat_id=variables_list["chat_id"], message_id=variables_list["message_list"].id,
-#                               text=variables_list["text_list"], reply_markup=variables_list["markup_choice"])
-#
-#
-# @bot.callback_query_handler(func=lambda c: c.data == "a_d")
-# def change_address_define(callback_query: types.CallbackQuery):
-#     global is_address_defined
-#     bot.answer_callback_query(callback_query.id)
-#     # далее мы делаем действия, связанные с этой кнопкой по сценарию
-#     if is_debug:
-#         if not is_address_defined:
-#             is_address_defined = True
-#         else:
-#             is_address_defined = False
-#         bot.edit_message_text(chat_id=variables_list["chat_id"], message_id=variables_list["message_list"].id,
-#                               text=variables_list["text_list"], reply_markup=variables_list["markup_choice"])
 
 
 def non_admin(message):
-    global debug_stage, is_debug
+    global debug_stage, is_debug, current_stage
     debug_stage = 0
     is_debug = False
     bot.send_message(message.chat.id, "Вы вышли из режима разработчика!")
     message.text = ""
-    manager(message)
+    get_prev_current_stage()
+    start(message) if current_stage == "None" else agree(message)
+
+
+def get_prev_current_stage():
+    global current_stage
+    if current_stage == "Старт":
+        current_stage = "None"
+    elif current_stage == "Инициалы":
+        current_stage = "Старт"
+    elif current_stage == "Город":
+        current_stage = "Инициалы"
+    elif current_stage == "Школа":
+        current_stage = "Город"
+    elif current_stage == "Класс":
+        current_stage = "Школа"
+    elif current_stage == "Контактные данные: опрос":
+        current_stage = "Класс"
+    elif current_stage == "Контактные данные: ввод":
+        current_stage = "Контактные данные: опрос"
 
 
 def finish_session(message):
     global current_stage, is_phone_defined, \
         is_email_defined, is_address_defined, \
-        is_debug, debug_stage, abit_data
+        is_debug, debug_stage, abit_data, is_force_exit
     get_info_from_abiturient(message.chat.id, abit_data["name"], abit_data["surname"],
                              abit_data["patronymic"], abit_data["phone"], abit_data["email"],
                              abit_data["address"], abit_data["school"], abit_data["class"],
-                             abit_data["city"])
+                             abit_data["city"]) if not is_force_exit else ...
     current_stage = "None"
     abit_data["name"] = ""
     abit_data["surname"] = ""
@@ -259,6 +254,7 @@ def finish_session(message):
     is_email_defined = False
     is_debug = False
     debug_stage = 0
+    is_force_exit = False
 
 
 def start(message):
@@ -278,11 +274,17 @@ def start(message):
 
 def agree(message):
     global current_stage, markup_remove, is_phone_defined, is_email_defined, \
-        is_address_defined, is_finished, abit_data
+        is_address_defined, is_finished, abit_data, is_force_exit
     if current_stage == "Старт":
-        text = "Тогда погнали! Для начала скажите, как Вас зовут по фамилии, имени и отчеству?"
-        bot.send_message(message.chat.id, text, reply_markup=markup_remove)
-        current_stage = "Инициалы"
+        if message.text == "Да":
+            text = "Тогда погнали! Для начала скажите, как Вас зовут по фамилии, имени и отчеству?"
+            bot.send_message(message.chat.id, text, reply_markup=markup_remove)
+            current_stage = "Инициалы"
+        elif message.text == "Нет":
+            text = "Ну, на нет - и суда нет, как говорится. Тогда не будем Вас беспокоить, до свидания!"
+            bot.send_message(message.chat.id, text)
+            is_force_exit = True
+            finish_session(message)
     elif current_stage == "Инициалы":
         _abit_data = message.text
         temp_string = ""

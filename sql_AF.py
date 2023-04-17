@@ -43,7 +43,8 @@ def test():
         command = input("Введите команду: ")
         if command == "clear":
             table = input("Какую таблицу Вы хотите очистить? ")
-            clear_table(table)
+            r = clear_table(table)
+            print(r)
         elif command == "add_st":
             get_info_from_abiturient(7357, "Аотвщ", "Адащат", "Test", 89023232920, "fgh@eidm.ru", "пер. Гоголевский, 2",
                                      "Пиздец №20", "5a", "Краснодар")
