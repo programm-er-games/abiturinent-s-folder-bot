@@ -34,7 +34,7 @@ from telebot import types
 from config import abit_sfedu_bot
 from check_formats_AF import check_phone_format, check_email_format, check_address_format
 from about_func_AF import about_func
-from sql_AF import get_info_from_abiturient, get_info_about_message
+from sql_AF import get_info_from_abiturient, get_info_about_message, clear_table
 
 bot = telebot.TeleBot(abit_sfedu_bot)
 markup_remove = types.ReplyKeyboardRemove()
@@ -56,17 +56,12 @@ is_email_defined = False
 is_debug = False
 is_finished = False
 variables_list = {
-    "p_d": types.InlineKeyboardButton("is_phone_defined", callback_data="p_d"),
-    "e_d": types.InlineKeyboardButton("is_email_defined", callback_data="e_d"),
-    "a_d": types.InlineKeyboardButton("is_address_defined", callback_data="a_d"),
-    "message_list": types.Message,
-    "text_list": "Эти переменные можно изменить:\n\n"
-                 f"     is_phone_defined: {is_phone_defined}\n"
-                 f"     is_email_defined: {is_email_defined}\n"
-                 f"     is_address_defined: {is_address_defined}\n"
-                 "\nВ меню кнопок выбирай переменную, значение которой хочешь поменять на противоположное",
-    "markup_choice": types.InlineKeyboardMarkup(row_width=3),
-    "chat_id": 0
+    "p_d": types.KeyboardButton("is_phone_defined"),  # , callback_data="p_d"
+    "e_d": types.KeyboardButton("is_email_defined"),  # , callback_data="e_d"
+    "a_d": types.KeyboardButton("is_address_defined"),  # , callback_data="a_d"
+    "message_list": ...,
+    "markup_choice": types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
+    # "chat_id": 0
 }
 debug_stage = 0
 
@@ -103,7 +98,7 @@ def about(message):
 
 
 def admin(message):
-    global debug_stage, is_debug
+    global debug_stage, is_debug, is_phone_defined, is_email_defined, is_address_defined
     if not is_debug:
         if debug_stage == 0:
             bot.send_message(message.chat.id, "Ты разработчик? Докажи!")
@@ -156,53 +151,85 @@ def admin(message):
 
             bot.send_message(message.chat.id, text, parse_mode='html')
             if is_debug:
-                global message_list, text_list, is_phone_defined, is_email_defined, is_address_defined, chat_id
+                global is_phone_defined, is_email_defined, is_address_defined
                 variables_list["markup_choice"].add(variables_list["p_d"], variables_list["e_d"], variables_list["a_d"])
-                variables_list["message_list"] = bot.send_message(message.chat.id, variables_list["text_list"],
-                                                                  reply_markup=variables_list["markup_choice"])
-                variables_list["chat_id"] = message.chat.id
+                variables_list["message_list"] = \
+                    bot.send_message(message.chat.id, "Эти переменные можно изменить:\n\n"
+                                                      f"     is_phone_defined: {is_phone_defined}\n"
+                                                      f"     is_email_defined: {is_email_defined}\n"
+                                                      f"     is_address_defined: {is_address_defined}\n"
+                                                      "\nВ меню кнопок выбирай переменную, значение которой хочешь "
+                                                      "поменять на противоположное",
+                                     reply_markup=variables_list["markup_choice"])
+                # variables_list["chat_id"] = message.chat.id
 
-
-@bot.callback_query_handler(func=lambda c: c.data == "p_d")
-def change_phone_define(callback_query: types.CallbackQuery):
-    global is_phone_defined
-    bot.answer_callback_query(callback_query.id)
-    # далее мы делаем действия, связанные с этой кнопкой по сценарию
-    if is_debug:
-        if not is_phone_defined:
-            is_phone_defined = True
+    else:
+        if message.text.startwith("/del"):
+            if message.text.endswith("st"):
+                clear_table("students")
+            elif message.text.endswith("se"):
+                clear_table("sent_messages")
         else:
-            is_phone_defined = False
-        bot.edit_message_text(chat_id=variables_list["chat_id"], message_id=variables_list["message_list"].id,
-                              text=variables_list["text_list"], reply_markup=variables_list["markup_choice"])
+            if message.text == "is_phone_defined":
+                is_phone_defined = True if not is_phone_defined else False
+            elif message.text == "is_email_defined":
+                is_email_defined = True if not is_email_defined else False
+            elif message.text == "is_address_defined":
+                is_address_defined = True if not is_address_defined else False
+            bot.send_message(message.chat.id, "Эти переменные можно изменить:\n\n"
+                                              f"     is_phone_defined: {is_phone_defined}\n"
+                                              f"     is_email_defined: {is_email_defined}\n"
+                                              f"     is_address_defined: {is_address_defined}\n"
+                                              "\nВ меню кнопок выбирай переменную, значение которой "
+                                              "хочешь поменять на противоположное",
+                             reply_markup=variables_list["markup_choice"])
+# @bot.callback_query_handler(func=lambda c: c.data == "p_d")
+# def change_phone_define(callback_query: types.CallbackQuery):
+#     global is_phone_defined
+#     bot.answer_callback_query(callback_query.id)
+#     # далее мы делаем действия, связанные с этой кнопкой по сценарию
+#     if is_debug:
+#         if not is_phone_defined:
+#             is_phone_defined = True
+#         else:
+#             is_phone_defined = False
+#         bot.edit_message_text(chat_id=variables_list["chat_id"], message_id=variables_list["message_list"].id,
+#                               text=variables_list["text_list"], reply_markup=variables_list["markup_choice"])
+#
+#
+# @bot.callback_query_handler(func=lambda c: c.data == "e_d")
+# def change_email_define(callback_query: types.CallbackQuery):
+#     global is_email_defined
+#     bot.answer_callback_query(callback_query.id)
+#     # далее мы делаем действия, связанные с этой кнопкой по сценарию
+#     if is_debug:
+#         if not is_email_defined:
+#             is_email_defined = True
+#         else:
+#             is_email_defined = False
+#         bot.edit_message_text(chat_id=variables_list["chat_id"], message_id=variables_list["message_list"].id,
+#                               text=variables_list["text_list"], reply_markup=variables_list["markup_choice"])
+#
+#
+# @bot.callback_query_handler(func=lambda c: c.data == "a_d")
+# def change_address_define(callback_query: types.CallbackQuery):
+#     global is_address_defined
+#     bot.answer_callback_query(callback_query.id)
+#     # далее мы делаем действия, связанные с этой кнопкой по сценарию
+#     if is_debug:
+#         if not is_address_defined:
+#             is_address_defined = True
+#         else:
+#             is_address_defined = False
+#         bot.edit_message_text(chat_id=variables_list["chat_id"], message_id=variables_list["message_list"].id,
+#                               text=variables_list["text_list"], reply_markup=variables_list["markup_choice"])
 
 
-@bot.callback_query_handler(func=lambda c: c.data == "e_d")
-def change_email_define(callback_query: types.CallbackQuery):
-    global is_email_defined
-    bot.answer_callback_query(callback_query.id)
-    # далее мы делаем действия, связанные с этой кнопкой по сценарию
-    if is_debug:
-        if not is_email_defined:
-            is_email_defined = True
-        else:
-            is_email_defined = False
-        bot.edit_message_text(chat_id=variables_list["chat_id"], message_id=variables_list["message_list"].id,
-                              text=variables_list["text_list"], reply_markup=variables_list["markup_choice"])
-
-
-@bot.callback_query_handler(func=lambda c: c.data == "a_d")
-def change_address_define(callback_query: types.CallbackQuery):
-    global is_address_defined
-    bot.answer_callback_query(callback_query.id)
-    # далее мы делаем действия, связанные с этой кнопкой по сценарию
-    if is_debug:
-        if not is_address_defined:
-            is_address_defined = True
-        else:
-            is_address_defined = False
-        bot.edit_message_text(chat_id=variables_list["chat_id"], message_id=variables_list["message_list"].id,
-                              text=variables_list["text_list"], reply_markup=variables_list["markup_choice"])
+def non_admin(message):
+    global debug_stage, is_debug
+    debug_stage = 0
+    is_debug = False
+    manager(message)
 
 
 def finish_session(message):
