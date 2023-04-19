@@ -7,14 +7,19 @@ rus_alphabet = ["а", "б", "в", "г", "д", "е", "ё", "ж", "з", "и", "й"
 
 
 def check_phone_format(checkstring: str):
+    is_plus = False
+    number_counter = 0
+    max_number = 11
     for symbol in checkstring:
-        if not symbol.isdigit():
+        if symbol == "+":
+            if not is_plus:
+                is_plus = True
+            else:
+                return "error"
+        if symbol.isdigit():
+            number_counter += 1
+        if number_counter > max_number or number_counter < max_number:
             return "error"
-    try:
-        result = int(checkstring)
-    except ValueError:
-        return "error"
-    return result
 
 
 def check_email_format(checkstring: str):
@@ -25,6 +30,8 @@ def check_email_format(checkstring: str):
             is_all_right = True
         elif symbol == "@":
             is_dog_detected = True
+        else:
+            is_all_right = False
     if is_all_right and is_dog_detected:
         return checkstring
     else:
