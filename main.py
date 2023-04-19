@@ -53,7 +53,7 @@ def queue_manager(message):
     else:
         if start_id != message.from_user.id:
             queue_id.append(message.from_user.id)
-    if is_finished:
+    if is_finished and queue_id != []:
         finish_session(message)
         bot.send_message(queue_id[0], "Теперь <b>Вы</b> можете начать работу с ботом!", parse_mode='html')
         start_id = queue_id[0]
