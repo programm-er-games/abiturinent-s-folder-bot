@@ -66,11 +66,8 @@ variables_list = {
     "message_list": ...,
     "markup_choice": types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 }
+message_counter = 0
 variables_list["markup_choice"].add(variables_list["p_d"], variables_list["e_d"], variables_list["a_d"])
-messages_dict = {
-    "messages": [],
-    "counter": 0
-}
 is_admin_choice = False
 is_blocked = False
 
@@ -332,7 +329,7 @@ def set_text(user_id, check_text: str = ""):
 
 
 def fill_fields(check_text: str):
-    global messages_dict
+    global message_counter
     number_of_messages = 0
     if (is_phone_defined and not is_email_defined and not is_address_defined) or \
             (not is_phone_defined and is_email_defined and not is_address_defined) or \
@@ -344,19 +341,50 @@ def fill_fields(check_text: str):
             (is_address_defined and is_email_defined) or \
             (is_phone_defined and is_address_defined):
         number_of_messages = 2
-    messages_dict["messages"].append(check_text)
-    messages_dict["counter"] += 1
-    if messages_dict["counter"] == number_of_messages:
-        for field in messages_dict["messages"]:
-            if is_phone_defined:
-                abit_data["phone"] = check_phone_format(field)
-            if is_email_defined:
-                abit_data["email"] = check_email_format(field)
-            if is_address_defined:
-                abit_data["address"] = check_address_format(field)
-        return True
-    else:
-        return False
+    message_counter += 1
+    temp_phone = ""
+    temp_email = ""
+    temp_address = ""
+    if message_counter == 1:
+        if is_phone_defined:
+            abit_data["phone"] = check_phone_format(check_text)
+        if is_email_defined:
+            abit_data["email"] = check_email_format(check_text)
+        if is_address_defined:
+            abit_data["address"] = check_address_format(check_text)
+    elif message_counter == 2:
+        if is_phone_defined and is_email_defined:
+            temp_phone = check_phone_format(check_text)
+            temp_email = check_email_format(check_text)
+            if temp_phone == "error" and temp_email == "error":
+                temp_phone, temp_email = temp_email, temp_phone
+        elif is_address_defined and is_email_defined:
+            temp_address = check_address_format(check_text)
+            temp_email = check_email_format(check_text)
+            if temp_address == "error" and temp_email == "error":
+                temp_address, temp_email = temp_email, temp_address
+        elif is_phone_defined and is_address_defined:
+            temp_phone = check_phone_format(check_text)
+            temp_address = check_address_format(check_text)
+            if temp_phone == "error" and temp_address == "error":
+                temp_phone, temp_address = temp_address, temp_phone
+    elif message_counter == 3:
+        temp_phone = check_phone_format(check_text)
+        temp_email = check_email_format(check_text)
+        temp_address = check_address_format(check_text)
+        if temp_phone == "error" and temp_email == "error":
+            temp_phone, temp_email = temp_email, temp_phone
+        elif temp_address == "error" and temp_email == "error":
+            temp_address, temp_email = temp_email, temp_address
+        elif temp_phone == "error" and temp_address == "error":
+            temp_phone, temp_address = temp_address, temp_phone
+    abit_data["phone"] = temp_phone if temp_phone != "error" and \
+        message_counter > 1 else "error"
+    abit_data["email"] = temp_email if temp_email != "error" and \
+        message_counter > 1 else "error"
+    abit_data["address"] = temp_address if temp_address != "error" and \
+        message_counter > 1 else "error"
+    return True if message_counter == number_of_messages else False
 
 
 def finish_session(message):
@@ -404,7 +432,7 @@ def agree(message):
     global current_stage, markup_remove, is_phone_defined, is_email_defined, \
         is_address_defined, is_finished, abit_data, is_force_exit
     if current_stage == "Старт":
-        if message.text == "Да" or message.text == "/!admin":
+        if message.text == "Да":
             text = "Тогда погнали! Для начала скажите, как Вас зовут по фамилии, имени и отчеству?"
             bot.send_message(message.chat.id, text, reply_markup=markup_remove)
             current_stage = "Инициалы"
