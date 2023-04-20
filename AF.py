@@ -34,7 +34,7 @@ import telebot
 from telebot import types
 
 from config import abit_sfedu_bot
-from check_formats_AF import check_phone_format, check_email_format, check_address_format
+from check_formats_AF import check_phone_format, check_email_format
 from about_func_AF import about_func
 from sql_AF import get_info_from_abiturient, get_info_about_message, clear_table
 
@@ -43,9 +43,12 @@ markup_remove = types.ReplyKeyboardRemove()
 current_stage = "None"
 debug_stage = 0
 is_force_exit = False
+is_phone_choiced = False
+is_email_choiced = False
+is_address_choiced = False
 is_phone_defined = False
-is_address_defined = False
 is_email_defined = False
+is_address_defined = False
 is_debug = False
 is_finished = False
 abit_data: dict = {
@@ -60,14 +63,14 @@ abit_data: dict = {
     "city": ""
 }
 variables_list = {
-    "p_d": types.KeyboardButton("is_phone_defined"),  # , callback_data="p_d"
-    "e_d": types.KeyboardButton("is_email_defined"),  # , callback_data="e_d"
-    "a_d": types.KeyboardButton("is_address_defined"),  # , callback_data="a_d"
+    "p_d": types.KeyboardButton("is_phone_choiced"),  # , callback_data="p_d"
+    "e_d": types.KeyboardButton("is_email_choiced"),  # , callback_data="e_d"
+    "a_d": types.KeyboardButton("is_address_choiced"),  # , callback_data="a_d"
     "message_list": ...,
     "markup_choice": types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 }
-message_counter = 0
 variables_list["markup_choice"].add(variables_list["p_d"], variables_list["e_d"], variables_list["a_d"])
+message_counter = 0
 is_admin_choice = False
 is_blocked = False
 
@@ -102,7 +105,7 @@ def about(message):
 
 
 def admin(message):
-    global debug_stage, is_debug, is_phone_defined, is_email_defined, is_address_defined, is_admin_choice, is_blocked
+    global debug_stage, is_debug, is_phone_choiced, is_email_choiced, is_address_choiced, is_admin_choice, is_blocked
     if current_stage == "Инициалы" or current_stage == "Контактные данные: ввод":
         bot.send_message(message.chat.id, "Не знаю почему, но на данном этапе программы команда /!admin не возвращает "
                                           "на исходное положение. Причём на остальных этапах всё работает нормально. "
@@ -164,13 +167,13 @@ def admin(message):
                        "за что они отвечают, поэтому будь осторожен). Если что, выйти из режима разработчика " \
                        "можно командой /!admin. По остальным командам пиши /ahelp"
                 if not current_stage.startswith("Контактные данные"):
-                    global is_phone_defined, is_email_defined, is_address_defined
+                    global is_phone_choiced, is_email_choiced, is_address_choiced
                     variables_list["message_list"] = \
                         bot.send_message(message.chat.id,
                                          "Эти переменные можно изменить:\n\n"
-                                         f"     is_phone_defined: {is_phone_defined}\n"
-                                         f"     is_email_defined: {is_email_defined}\n"
-                                         f"     is_address_defined: {is_address_defined}\n"
+                                         f"     is_phone_choiced: {is_phone_choiced}\n"
+                                         f"     is_email_choiced: {is_email_choiced}\n"
+                                         f"     is_address_choiced: {is_address_choiced}\n"
                                          "\nВ меню кнопок выбирай переменную, значение которой хочешь "
                                          "поменять на противоположное.\n"
                                          f"{text}",
@@ -195,9 +198,9 @@ def admin(message):
             text = "Очистка данных таблицы проведена <b>" + result + "</b>"
             bot.send_message(message.chat.id, text, parse_mode='html')
         elif message.text == "/clch":
-            is_phone_defined = False
-            is_email_defined = False
-            is_address_defined = False
+            is_phone_choiced = False
+            is_email_choiced = False
+            is_address_choiced = False
             is_admin_choice = False
             bot.send_message(message.chat.id, "Все изменения были отменены!")
         elif message.text == "/ahelp":
@@ -219,16 +222,16 @@ def admin(message):
             bot.send_message(message.chat.id, "Вы <b>уже</b> находитесь в режиме разработчика!", parse_mode='html')
         else:
             if not is_blocked:
-                if message.text == "is_phone_defined":
-                    is_phone_defined = True if not is_phone_defined else False
-                elif message.text == "is_email_defined":
-                    is_email_defined = True if not is_email_defined else False
-                elif message.text == "is_address_defined":
-                    is_address_defined = True if not is_address_defined else False
+                if message.text == "is_phone_choiced":
+                    is_phone_choiced = True if not is_phone_choiced else False
+                elif message.text == "is_email_choiced":
+                    is_email_choiced = True if not is_email_choiced else False
+                elif message.text == "is_address_choiced":
+                    is_address_choiced = True if not is_address_choiced else False
                 bot.send_message(message.chat.id, "Эти переменные можно изменить:\n"
-                                                  f"     is_phone_defined: {is_phone_defined}\n"
-                                                  f"     is_email_defined: {is_email_defined}\n"
-                                                  f"     is_address_defined: {is_address_defined}\n",
+                                                  f"     is_phone_choiced: {is_phone_choiced}\n"
+                                                  f"     is_email_choiced: {is_email_choiced}\n"
+                                                  f"     is_address_choiced: {is_address_choiced}\n",
                                  reply_markup=variables_list["markup_choice"])
                 is_admin_choice = True
             else:
@@ -264,7 +267,7 @@ def get_prev_current_stage():
 
 
 def set_text(user_id, check_text: str = ""):
-    global is_phone_defined, is_email_defined, is_address_defined
+    global is_phone_choiced, is_email_choiced, is_address_choiced
     list_of_texts = ["апиши, пожалуйста, свой рабочий номер телефона, чтобы мы всегда могли тебе позвонить "
                      "и спросить, как у тебя дела :)",
                      "апиши, пожалуйста, свою рабочую электронную почту, чтобы мы всегда могли "
@@ -280,44 +283,44 @@ def set_text(user_id, check_text: str = ""):
                      "апиши, пожалуйста, телефон, электронную почту и адрес проживания отдельными сообщениями, "
                      "чтобы бот смог различить данные"
                      ]
-    is_phone_defined = True \
+    is_phone_choiced = True \
         if not is_admin_choice and (check_text == "Телефон" or
                                     check_text == "И телефон, и email" or
                                     check_text == "И телефон, и адрес" or
                                     check_text == "Всё сразу") \
-        else (True if is_admin_choice and is_phone_defined else False)
-    is_email_defined = True \
+        else (True if is_admin_choice and is_phone_choiced else False)
+    is_email_choiced = True \
         if not is_admin_choice and (check_text == "Email" or
                                     check_text == "И адрес, и email" or
                                     check_text == "И телефон, и email" or
                                     check_text == "Всё сразу") \
-        else (True if is_admin_choice and is_email_defined else False)
-    is_address_defined = True \
+        else (True if is_admin_choice and is_email_choiced else False)
+    is_address_choiced = True \
         if not is_admin_choice and (check_text == "Адрес проживания" or
                                     check_text == "И адрес, и email" or
                                     check_text == "И телефон, и адрес" or
                                     check_text == "Всё сразу") \
-        else (True if is_admin_choice and is_address_defined else False)
+        else (True if is_admin_choice and is_address_choiced else False)
     if check_text == "Телефон" or \
-            (is_admin_choice and (is_phone_defined and not is_email_defined and not is_address_defined)):
+            (is_admin_choice and (is_phone_choiced and not is_email_choiced and not is_address_choiced)):
         text = ("Тогда н" if not is_admin_choice else "Н") + list_of_texts[0]
     elif check_text == "Email" or \
-            (is_admin_choice and (not is_phone_defined and is_email_defined and not is_address_defined)):
+            (is_admin_choice and (not is_phone_choiced and is_email_choiced and not is_address_choiced)):
         text = ("Тогда н" if not is_admin_choice else "Н") + list_of_texts[1]
     elif check_text == "Адрес проживания" or \
-            (is_admin_choice and (not is_phone_defined and not is_email_defined and is_address_defined)):
+            (is_admin_choice and (not is_phone_choiced and not is_email_choiced and is_address_choiced)):
         text = ("Тогда н" if not is_admin_choice else "Н") + list_of_texts[2]
     elif check_text == "И телефон, и email" or \
-            (is_admin_choice and (is_phone_defined and is_email_defined and not is_address_defined)):
+            (is_admin_choice and (is_phone_choiced and is_email_choiced and not is_address_choiced)):
         text = ("Тогда н" if not is_admin_choice else "Н") + list_of_texts[3]
     elif check_text == "И адрес, и email" or \
-            (is_admin_choice and (not is_phone_defined and is_email_defined and is_address_defined)):
+            (is_admin_choice and (not is_phone_choiced and is_email_choiced and is_address_choiced)):
         text = ("Тогда н" if not is_admin_choice else "Н") + list_of_texts[4]
     elif check_text == "И телефон, и адрес" or \
-            (is_admin_choice and (is_phone_defined and not is_email_defined and is_address_defined)):
+            (is_admin_choice and (is_phone_choiced and not is_email_choiced and is_address_choiced)):
         text = ("Тогда н" if not is_admin_choice else "Н") + list_of_texts[5]
     elif check_text == "Всё сразу" or \
-            (is_admin_choice and (is_phone_defined and is_email_defined and is_address_defined)):
+            (is_admin_choice and (is_phone_choiced and is_email_choiced and is_address_choiced)):
         text = ("Ого! Ты решил(а) всё сразу нам сказать? "
                 "Какой(ая) ты молодец!\nВ таком случае н" if not is_admin_choice else "Н") + list_of_texts[6]
     else:
@@ -329,68 +332,35 @@ def set_text(user_id, check_text: str = ""):
 
 
 def fill_fields(check_text: str):
-    global message_counter
+    global message_counter, is_phone_defined, is_email_defined, is_address_defined
     number_of_messages = 0
-    if (is_phone_defined and not is_email_defined and not is_address_defined) or \
-            (not is_phone_defined and is_email_defined and not is_address_defined) or \
-            (not is_phone_defined and not is_email_defined and is_address_defined):
+    if (is_phone_choiced and not is_email_choiced and not is_address_choiced) or \
+            (not is_phone_choiced and is_email_choiced and not is_address_choiced) or \
+            (not is_phone_choiced and not is_email_choiced and is_address_choiced):
         number_of_messages = 1
-    elif is_phone_defined and is_email_defined and is_address_defined:
+    elif is_phone_choiced and is_email_choiced and is_address_choiced:
         number_of_messages = 3
-    elif (is_phone_defined and is_email_defined) or \
-            (is_address_defined and is_email_defined) or \
-            (is_phone_defined and is_address_defined):
+    elif (is_phone_choiced and is_email_choiced and not is_address_choiced) or \
+            (is_address_choiced and is_email_choiced and not is_phone_choiced) or \
+            (is_phone_choiced and is_address_choiced and not is_email_choiced):
         number_of_messages = 2
     message_counter += 1
-    temp_phone = ""
-    temp_email = ""
-    temp_address = ""
-    if message_counter == 1:
-        if is_phone_defined:
-            abit_data["phone"] = check_phone_format(check_text)
-        if is_email_defined:
-            abit_data["email"] = check_email_format(check_text)
-        if is_address_defined:
-            abit_data["address"] = check_address_format(check_text)
-    elif message_counter == 2:
-        if is_phone_defined and is_email_defined:
-            temp_phone = check_phone_format(check_text)
-            temp_email = check_email_format(check_text)
-            if temp_phone == "error" and temp_email == "error":
-                temp_phone, temp_email = temp_email, temp_phone
-        elif is_address_defined and is_email_defined:
-            temp_address = check_address_format(check_text)
-            temp_email = check_email_format(check_text)
-            if temp_address == "error" and temp_email == "error":
-                temp_address, temp_email = temp_email, temp_address
-        elif is_phone_defined and is_address_defined:
-            temp_phone = check_phone_format(check_text)
-            temp_address = check_address_format(check_text)
-            if temp_phone == "error" and temp_address == "error":
-                temp_phone, temp_address = temp_address, temp_phone
-    elif message_counter == 3:
-        temp_phone = check_phone_format(check_text)
-        temp_email = check_email_format(check_text)
-        temp_address = check_address_format(check_text)
-        if temp_phone == "error" and temp_email == "error":
-            temp_phone, temp_email = temp_email, temp_phone
-        elif temp_address == "error" and temp_email == "error":
-            temp_address, temp_email = temp_email, temp_address
-        elif temp_phone == "error" and temp_address == "error":
-            temp_phone, temp_address = temp_address, temp_phone
-    abit_data["phone"] = temp_phone if temp_phone != "error" and \
-        message_counter > 1 else "error"
-    abit_data["email"] = temp_email if temp_email != "error" and \
-        message_counter > 1 else "error"
-    abit_data["address"] = temp_address if temp_address != "error" and \
-        message_counter > 1 else "error"
+    if is_phone_choiced and not is_phone_defined:
+        abit_data["phone"] = check_phone_format(check_text)
+        is_phone_defined = True
+    elif is_email_choiced and not is_email_defined:
+        abit_data["email"] = check_email_format(check_text)
+        is_email_defined = True
+    elif is_address_choiced and not is_address_defined:
+        abit_data["address"] = check_text
+        is_address_defined = True
     return True if message_counter == number_of_messages else False
 
 
 def finish_session(message):
-    global current_stage, is_phone_defined, \
-        is_email_defined, is_address_defined, \
-        is_debug, debug_stage, abit_data, is_force_exit
+    global current_stage, is_phone_choiced, is_email_choiced, is_address_choiced, \
+        is_phone_defined, is_email_defined, is_address_defined, \
+        is_debug, debug_stage, abit_data, is_force_exit, is_admin_choice
     get_info_from_abiturient(message.chat.id, abit_data["name"], abit_data["surname"],
                              abit_data["patronymic"], abit_data["phone"], abit_data["email"],
                              abit_data["address"], abit_data["school"], abit_data["class"],
@@ -405,9 +375,13 @@ def finish_session(message):
     abit_data["school"] = ""
     abit_data["class"] = ""
     abit_data["city"] = ""
+    is_phone_choiced = False
+    is_address_choiced = False
+    is_email_choiced = False
     is_phone_defined = False
-    is_address_defined = False
     is_email_defined = False
+    is_address_defined = False
+    is_admin_choice = False
     is_debug = False
     debug_stage = 0
     is_force_exit = False
@@ -429,8 +403,8 @@ def start(message):
 
 
 def agree(message):
-    global current_stage, markup_remove, is_phone_defined, is_email_defined, \
-        is_address_defined, is_finished, abit_data, is_force_exit
+    global current_stage, markup_remove, is_phone_choiced, is_email_choiced, \
+        is_address_choiced, is_finished, abit_data, is_force_exit
     if current_stage == "Старт":
         if message.text == "Да":
             text = "Тогда погнали! Для начала скажите, как Вас зовут по фамилии, имени и отчеству?"
@@ -519,6 +493,7 @@ def agree(message):
                 error_text = "Где-то ты совершил(а) ошибку! Перепиши, пожалуйста, " \
                              "ещё раз своё сообщение с исправленными данными"
                 bot.send_message(message.chat.id, error_text, reply_markup=markup_remove)
+                get_prev_current_stage()
             else:
                 text = "Спасибо за то, что уделили время! Если возникли какие-либо вопросы или предложения по поводу " \
                        "этого бота обращаться к этому боту или человеку (если вдруг бот будет не работать): " \

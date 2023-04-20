@@ -1,12 +1,6 @@
 eng_alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
                 "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
                 "w", "x", "y", "z"]
-rus_small_alphabet = ["а", "б", "в", "г", "д", "е", "ё", "ж", "з", "и", "й",
-                      "к", "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф",
-                      "х", "ц", "ч", "ш", "щ", "ъ", "ы", "ь", "э", "ю", "я"]
-rus_big_alphabet = ["А", "Б", "В", "Г", "Д", "Е", "Ё", "Ж", "З", "И", "Й",
-                    "К", "Л", "М", "Н", "О", "П", "Р", "С", "Т", "У", "Ф",
-                    "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы", "Ь", "Э", "Ю", "Я"]
 
 
 def check_phone_format(checkstring: str):
@@ -48,15 +42,6 @@ def check_email_format(checkstring: str):
         return "error"
 
 
-def check_address_format(checkstring: str):
-    for symbol in checkstring:
-        if symbol in rus_small_alphabet or symbol in rus_big_alphabet or symbol.isdigit() or \
-                symbol == "," or symbol == "." or symbol == " ":
-            continue
-        return "error"
-    return checkstring
-
-
 def test():
     command = input("Введите команду: ")
     if command == "phone":
@@ -65,9 +50,6 @@ def test():
     elif command == "email":
         string = input("Введите любую строку, которая похожа на адрес электронной почты: ")
         result = check_email_format(string)
-    elif command == "address":
-        string = input("Введите любую строку, которая похожа на адрес, в котором живёт человек: ")
-        result = check_address_format(string)
     elif command == "/exit":
         return 0
     else:
