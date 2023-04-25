@@ -63,9 +63,9 @@ abit_data: dict = {
     "city": ""
 }
 variables_list = {
-    "p_d": types.KeyboardButton("is_phone_choiced"),  # , callback_data="p_d"
-    "e_d": types.KeyboardButton("is_email_choiced"),  # , callback_data="e_d"
-    "a_d": types.KeyboardButton("is_address_choiced"),  # , callback_data="a_d"
+    "p_d": types.KeyboardButton("is_phone_choiced"),
+    "e_d": types.KeyboardButton("is_email_choiced"),
+    "a_d": types.KeyboardButton("is_address_choiced"),
     "message_list": ...,
     "markup_choice": types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=3)
 }
@@ -75,20 +75,44 @@ is_admin_choice = False
 is_blocked = False
 
 
+if __name__ == "__main__":
+    @bot.message_handler(content_types=['text'])
+    def debug_act(message):
+        if message.text == "/test" or \
+                current_stage in ["Класс", "Контактные данные: опрос", "Контактные данные: ввод"]:
+            is_end = manager(message)
+            bot.send_message(message.chat.id,
+                             "Чтобы начать отладку, напишите команду /test") if current_stage == "None" else ...
+        else:
+            bot.stop_bot()
+            raise SystemError("Несанкционированный доступ или неправильное кодовое слово!")
+        if is_end:
+            finish_session(message)
+
+
 def manager(message):
-    get_info_about_message(message.chat.id, message.text)
+    global current_stage, debug_stage, is_debug
+    get_info_about_message(message.chat.id, message.text) if __name__ != "__main__" else ...
+    if __name__ == "__main__":
+        if message.text == "/test":
+            current_stage = "Класс"
+            for i in abit_data.keys():
+                abit_data[i] = 0 if i == "phone" else "test"
+        if message.text == "/admin":
+            is_debug = True
+            debug_stage = 5
+        print(current_stage)
     if message.text == "/about":
         about(message)
     elif message.text == "/!admin":
         non_admin(message)
     elif message.text == "/admin" or debug_stage > 0:
         admin(message)
-    elif current_stage == "None" and message.text == "/start":
-        start(message)
     elif current_stage in ["Старт", "Инициалы", "Город", "Школа", "Класс",
                            "Контактные данные: опрос", "Контактные данные: ввод"]:
         agree(message)
-
+    elif current_stage == "None" and message.text == "/start":
+        start(message)
     elif current_stage not in ["None", "Старт", "Инициалы", "Город", "Школа", "Класс",
                                "Контактные данные: опрос", "Контактные данные: ввод"]:
         bot.send_message(message.chat.id, "<b>Извините, возникли неполадки в программе. "
@@ -219,7 +243,8 @@ def admin(message):
                                               "повлиять на работу всего сценария!</b>",
                              parse_mode='html')
         elif message.text == "/admin":
-            bot.send_message(message.chat.id, "Вы <b>уже</b> находитесь в режиме разработчика!", parse_mode='html')
+            bot.send_message(message.chat.id, "Вы <b>уже</b> находитесь в режиме разработчика!", parse_mode='html') \
+                if __name__ != "__main__" else ...
         else:
             if not is_blocked:
                 if message.text == "is_phone_choiced":
@@ -268,6 +293,7 @@ def get_prev_current_stage():
 
 def set_text(user_id, check_text: str = ""):
     global is_phone_choiced, is_email_choiced, is_address_choiced
+    text = ""
     list_of_texts = ["апиши, пожалуйста, свой рабочий номер телефона, чтобы мы всегда могли тебе позвонить "
                      "и спросить, как у тебя дела :)",
                      "апиши, пожалуйста, свою рабочую электронную почту, чтобы мы всегда могли "
@@ -323,11 +349,13 @@ def set_text(user_id, check_text: str = ""):
             (is_admin_choice and (is_phone_choiced and is_email_choiced and is_address_choiced)):
         text = ("Ого! Ты решил(а) всё сразу нам сказать? "
                 "Какой(ая) ты молодец!\nВ таком случае н" if not is_admin_choice else "Н") + list_of_texts[6]
+    elif check_text == "debug":
+        pass
     else:
         bot.send_message(user_id, "<b>Извините, возникли неполадки в программе. "
                                   "Выполняю принудительное завершение работы...</b>", parse_mode='html')
         bot.stop_bot()
-        raise SystemError("Сбой в программе! Ошибка в присвоении переменных!")
+        raise SystemError("Сбой в программе! Нет наводящего текста!")
     return text
 
 
@@ -348,19 +376,21 @@ def fill_fields(check_text: str):
     if is_phone_choiced and not is_phone_defined:
         abit_data["phone"] = check_phone_format(check_text)
         is_phone_defined = True
-    elif is_email_choiced and not is_email_defined:
-        abit_data["email"] = check_email_format(check_text)
-        is_email_defined = True
     elif is_address_choiced and not is_address_defined:
         abit_data["address"] = check_text
         is_address_defined = True
+    elif is_email_choiced and not is_email_defined:
+        abit_data["email"] = check_email_format(check_text)
+        is_email_defined = True
+
     return True if message_counter == number_of_messages else False
 
 
 def finish_session(message):
     global current_stage, is_phone_choiced, is_email_choiced, is_address_choiced, \
         is_phone_defined, is_email_defined, is_address_defined, \
-        is_debug, debug_stage, abit_data, is_force_exit, is_admin_choice
+        is_debug, debug_stage, abit_data, is_force_exit, \
+        is_admin_choice, is_finished, message_counter
     get_info_from_abiturient(message.chat.id, abit_data["name"], abit_data["surname"],
                              abit_data["patronymic"], abit_data["phone"], abit_data["email"],
                              abit_data["address"], abit_data["school"], abit_data["class"],
@@ -385,6 +415,8 @@ def finish_session(message):
     is_debug = False
     debug_stage = 0
     is_force_exit = False
+    is_finished = False
+    message_counter = 0
 
 
 def start(message):
@@ -455,7 +487,8 @@ def agree(message):
         bot.send_message(message.chat.id, text)
         current_stage = "Класс"
     elif current_stage == "Класс":
-        abit_data["class"] = message.text
+        if __name__ != "__main__":
+            abit_data["class"] = message.text
 
         if not is_admin_choice:
             text = f"Хорошо, {abit_data['name']}! Теперь нам нужно знать, как мы можем с тобой связаться " \
@@ -477,7 +510,7 @@ def agree(message):
             bot.send_message(message.chat.id, text, parse_mode="html", reply_markup=markup_choice)
             current_stage = "Контактные данные: опрос"
         else:
-            text = set_text(message.chat.id, message.text)
+            text = set_text(message.chat.id, message.text if __name__ != "__main__" else "debug")
             bot.send_message(message.chat.id, text)
             current_stage = "Контактные данные: ввод"
     elif current_stage == "Контактные данные: опрос":
@@ -501,3 +534,8 @@ def agree(message):
                 bot.send_message(message.chat.id, text)
                 current_stage = "None"
                 is_finished = True
+
+
+if __name__ == "__main__":
+    print("test")
+    bot.polling(non_stop=True, skip_pending=True)
