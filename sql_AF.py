@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 
-conn = sqlite3.Connection("abiturient\'s_folder.db", check_same_thread=False)
+conn = sqlite3.Connection("abiturients_folder.db", check_same_thread=False)
 cur = conn.cursor()
 current_datetime = str(datetime.now().day) + "." + str(datetime.now().month) + "." + \
                    str(datetime.now().year) + " " + str(datetime.now().hour) + ":" + \

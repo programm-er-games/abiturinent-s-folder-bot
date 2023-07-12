@@ -514,8 +514,6 @@ def agree(message):
             bot.send_message(message.chat.id, text)
             current_stage = "Контактные данные: ввод"
     elif current_stage == "Контактные данные: опрос":
-        # TODO: разобраться, как мы будем брать данные: одним залпом (одним сообщением, потом вычленять) или
-        #  несколькими (несколькими сообщениями, потом поочерёдно присваивать значения)
         text = set_text(message.chat.id, message.text)
         bot.send_message(message.chat.id, text, reply_markup=markup_remove)
         current_stage = "Контактные данные: ввод"

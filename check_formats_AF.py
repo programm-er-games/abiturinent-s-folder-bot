@@ -21,7 +21,7 @@ def check_phone_format(checkstring: str):
 
 def check_email_format(checkstring: str):
     is_dog_detected = False
-    is_dot_detected = False  # переменная для обозначения наличия точки после собаки
+    is_dot_detected = False  # переменная для обозначения наличия точки после наличия собаки
     is_all_right = False
     for symbol in checkstring:
         if symbol in eng_alphabet or \
@@ -60,5 +60,3 @@ def test():
 if __name__ == "__main__":
     test_result = test()
     print(test_result)
-    # com = input("s: ")
-    # print(com.__sizeof__())
