@@ -5,8 +5,7 @@ eng_alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k",
 
 def check_phone_format(checkstring: str):
     """
-        Returns True, if phone from message complies with the standards, else False. 
-        Support only russian number standard
+        Returns True, if phone from message complies with the standards, else False
     """
     is_plus = False
     for symbol in checkstring:

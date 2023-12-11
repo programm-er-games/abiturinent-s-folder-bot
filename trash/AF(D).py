@@ -40,8 +40,8 @@ from sql_AF import get_info_from_abiturient, get_info_about_message, clear_table
 
 bot = telebot.TeleBot(abit_sfedu_bot)
 markup_remove = types.ReplyKeyboardRemove()
-current_stage = "None"  # a variable responsible for the specific stage of the program
-debug_stage = 0         # a variable responsible for the specific stage of passing the developer verification
+current_stage = "None"  # a variable responsible for a specific stage of the program
+debug_stage = 0  # a variable responsible for the specific stage of passing the developer verification
 is_force_exit = False
 is_phone_choiced = False
 is_email_choiced = False
@@ -51,7 +51,7 @@ is_email_defined = False
 is_address_defined = False
 is_debug = False
 is_finished = False
-abit_data: dict = {  # a variable responsible for received data about abiturient
+abit_data: dict = {
     "name": "",
     "surname": "",
     "patronymic": "",
@@ -73,7 +73,6 @@ variables_list["markup_choice"].add(variables_list["p_d"], variables_list["e_d"]
 message_counter = 0
 is_admin_choice = False
 is_blocked = False
-
 
 # necessary for test functions and debugging
 if __name__ == "__main__":
@@ -99,15 +98,15 @@ def manager(message):
     global current_stage, debug_stage, is_debug
     # recording necessary info about sent message
     get_info_about_message(message.chat.id, message.text) if __name__ != "__main__" else ...
-    if __name__ == "__main__":
-        if message.text == "/test":
-            current_stage = "Класс"
-            for i in abit_data.keys():
-                abit_data[i] = 0 if i == "phone" else "test"
-        if message.text == "/admin":
-            is_debug = True
-            debug_stage = 5
-        print(current_stage)
+    # if __name__ == "__main__":
+    #    if message.text == "/test":
+    #        current_stage = "Класс"
+    #        for i in abit_data.keys():
+    #            abit_data[i] = 0 if i == "phone" else "test"
+    #    if message.text == "/admin":
+    #        is_debug = True
+    #        debug_stage = 5
+    #    print(current_stage)
     if message.text == "/about":
         about(message)
     elif message.text == "/!admin":

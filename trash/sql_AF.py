@@ -8,36 +8,9 @@ current_datetime = str(datetime.now().day) + "." + str(datetime.now().month) + "
                    str(datetime.now().minute) + ":" + str(datetime.now().second)
 
 
-def check_tables():
-    """
-        This function creates tables if they have not been created
-    """
-    cur.execute("""CREATE TABLE IF NOT EXISTS students (
-        id INTEGER,
-        name TEXT,
-        surname TEXT,
-        patronymic TEXT,
-        phone INTEGER,
-        email TEXT,
-        address TEXT,
-        school TEXT,
-        class TEXT,
-        city TEXT
-    )""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS sent_messages (
-        id INTEGER,
-        message_text TEXT,
-        write_datetime TEXT
-    )""")
-    conn.commit()
-
-
 def get_info_from_abiturient(user_id: int, name: str, surname: str, op_patronymic: str,
                              op_phone: int, op_email: str, op_address: str,
                              school: str, op_class: str, city: str):
-    """
-        Adds data about student from arguments
-    """
     cur.execute("INSERT INTO students (id, name, surname, patronymic, phone, email, address, school, class, city) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (user_id, name, surname, op_patronymic, op_phone, op_email, op_address, school, op_class, city))
@@ -45,18 +18,12 @@ def get_info_from_abiturient(user_id: int, name: str, surname: str, op_patronymi
 
 
 def get_info_about_message(user_id: int, text: str):
-    """
-        Adds data about sent message from arguments
-    """
     cur.execute("INSERT INTO sent_messages (id, message_text, write_datetime) VALUES (?, ?, ?)",
                 (user_id, text, current_datetime))
     conn.commit()
 
 
 def clear_table(table: str):
-    """
-        Clear the table specified in the arguments. Returns str, if the operation was successful
-    """
     if table in ["students", "sent_messages"]:
         data = ""
         if table == "students":
@@ -72,9 +39,6 @@ def clear_table(table: str):
 
 
 def test():
-    """
-        Test function. Do not use in main program
-    """
     while True:
         command = input("Введите команду: ")
         if command == "clear":
