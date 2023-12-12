@@ -416,7 +416,7 @@ def fill_fields(check_text: str):
 
 def finish_session(message):
     """
-        This function changes the variables to their initial values. Nothing returns
+        This function changes the variables to their initial values and add abiturient's data to DB. Nothing returns
     """
     global current_stage, is_phone_choiced, is_email_choiced, is_address_choiced, \
         is_phone_defined, is_email_defined, is_address_defined, \
