@@ -89,7 +89,7 @@ def test():
         elif command == "/exit":
             return "Тест функций прошёл успешно!"
         else:
-            return "Ты долбаёб?"
+            return "Неверная команда!"
 
 
 if __name__ == "__main__":

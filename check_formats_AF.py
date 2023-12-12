@@ -63,7 +63,7 @@ def _test():
     elif command == "/exit":
         return 0
     else:
-        return "Ты долбаёб?"
+        return "Неверная команда!"
     return result
 
 
