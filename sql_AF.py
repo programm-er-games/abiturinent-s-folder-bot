@@ -13,21 +13,22 @@ def check_tables():
         This function creates tables if they have not been created
     """
     cur.execute("""CREATE TABLE IF NOT EXISTS students (
-        id INTEGER,
-        name TEXT,
-        surname TEXT,
+        id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        surname TEXT NOT NULL,
         patronymic TEXT,
         phone INTEGER,
         email TEXT,
         address TEXT,
-        school TEXT,
+        school TEXT NOT NULL,
         class TEXT,
-        city TEXT
+        city TEXT NOT NULL
     )""")
+    conn.commit()
     cur.execute("""CREATE TABLE IF NOT EXISTS sent_messages (
-        id INTEGER,
+        id INTEGER NOT NULL,
         message_text TEXT,
-        write_datetime TEXT
+        write_datetime TEXT NOT NULL
     )""")
     conn.commit()
 
@@ -95,3 +96,4 @@ def test():
 if __name__ == "__main__":
     test_result = test()
     print(test_result)
+    # check_tables()

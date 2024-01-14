@@ -1,0 +1,124 @@
+{
+    "type": "database",
+    "name": "abiturients_folder",
+    "objects": [
+        {
+            "type": "table",
+            "database": null,
+            "name": "sent_messages",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE sent_messages (\n        id INTEGER NOT NULL,\n        message_text TEXT,\n        write_datetime TEXT NOT NULL\n    )",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "message_text",
+                    "type": "TEXT"
+                },
+                {
+                    "name": "write_datetime",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL\n    "
+                        }
+                    ]
+                }
+            ],
+            "rows": [
+            ]
+        },
+        {
+            "type": "table",
+            "database": null,
+            "name": "students",
+            "withoutRowId": false,
+            "strict": false,
+            "ddl": "CREATE TABLE students (\n        id INTEGER NOT NULL,\n        name TEXT NOT NULL,\n        surname TEXT NOT NULL,\n        patronymic TEXT,\n        phone INTEGER,\n        email TEXT,\n        address TEXT,\n        school TEXT NOT NULL,\n        class TEXT,\n        city TEXT NOT NULL\n    )",
+            "columns": [
+                {
+                    "name": "id",
+                    "type": "INTEGER",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "name",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "surname",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "patronymic",
+                    "type": "TEXT"
+                },
+                {
+                    "name": "phone",
+                    "type": "INTEGER"
+                },
+                {
+                    "name": "email",
+                    "type": "TEXT"
+                },
+                {
+                    "name": "address",
+                    "type": "TEXT"
+                },
+                {
+                    "name": "school",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL"
+                        }
+                    ]
+                },
+                {
+                    "name": "class",
+                    "type": "TEXT"
+                },
+                {
+                    "name": "city",
+                    "type": "TEXT",
+                    "constraints": [
+                        {
+                            "type": "NOT NULL",
+                            "definition": "NOT NULL\n    "
+                        }
+                    ]
+                }
+            ],
+            "rows": [
+            ]
+        }
+    ]
+}

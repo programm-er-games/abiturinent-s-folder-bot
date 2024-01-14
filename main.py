@@ -47,6 +47,7 @@ def queue_manager(message):
 
 
 if __name__ == "__main__":
+    print("Starting \"Abiturient's folder\" bot...")
     from datetime import datetime
 
     # используем точное время запуска бота для отладки

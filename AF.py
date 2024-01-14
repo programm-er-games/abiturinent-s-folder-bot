@@ -71,7 +71,7 @@ variables_list = {
 }
 variables_list["markup_choice"].add(variables_list["p_d"], variables_list["e_d"], variables_list["a_d"])
 message_counter = 0
-is_admin_choice = False
+is_admin_choice = False  # variable indicating that the developer has made a change
 is_blocked = False
 
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 def manager(message):
     """
         This function determines which stage the user is currently at and what needs to be done at this stage.
-        Nothing returns
+        Returns True, if program has been finished, else False
     """
     global current_stage, debug_stage, is_debug
     # recording necessary info about sent message
@@ -458,7 +458,8 @@ def start(message):
     global current_stage
     text = "Здравствуйте! Мы рады, что Вы решили выбрать наш университет!\n" \
            "Данный бот, как видно из его названия, собирает данные об абитуриентах, которые изъявляют желание " \
-           "поступить сюда.\n\nНаш университет один из самых лучших в мире!\n\nВаши данные будут переданы нужным людям. Вы согласны предоставить " \
+           "поступить сюда.\n\nНаш университет один из самых лучших в мире!\n\n" \
+           "Ваши данные будут переданы нужным людям. Вы согласны предоставить " \
            "Ваши персональные данные для поступления?"
     markup_choice = types.ReplyKeyboardMarkup(resize_keyboard=True)
     yes = types.KeyboardButton("Да")
